@@ -125,8 +125,8 @@ class GameEngine {
                 case 'similar_word':
                     bluffCount = GameEngine.getStandardBluffCount(playerCount);
                     const pair = getRandomSimilarPair();
-                    word = pair.realWord;
-                    bluffWord = pair.similarWord;
+                    word = pair[0];
+                    bluffWord = pair[1];
                     break;
 
                 default:
@@ -145,12 +145,11 @@ class GameEngine {
         if (twist && twist.id === 'all_suspect') {
             // Herkes farklı kelime görüyor
             room.bluffPlayerIds = activePlayers.map(p => p.id);
-            const usedWords = [];
+            const allWords = require('./wordList').getAllWords();
+            const shuffled = require('../utils/helpers').shuffleArray([...allWords]);
             const playerWords = {};
-            for (const player of activePlayers) {
-                const w = getRandomWord(usedWords);
-                playerWords[player.id] = w;
-                usedWords.push(w);
+            for (let i = 0; i < activePlayers.length; i++) {
+                playerWords[activePlayers[i].id] = shuffled[i % shuffled.length];
             }
             room.playerWords = playerWords;
         } else if (bluffCount === 0) {
