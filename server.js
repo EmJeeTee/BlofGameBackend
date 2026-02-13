@@ -67,6 +67,57 @@ app.get('/', (req, res) => {
 io.on('connection', (socket) => {
     console.log(`Bağlandı: ${socket.id}`);
 
+    // ---- Odaya Yeniden Bağlan (sayfa geçişi/refresh sonrası) ----
+    socket.on('rejoin-room', ({ roomCode, playerId }, callback) => {
+        try {
+            const room = roomManager.getRoom(roomCode);
+            if (!room) {
+                callback({ success: false, error: 'Oda bulunamadı.' });
+                return;
+            }
+
+            // Oyuncuyu bul ve socket bilgisini güncelle
+            const player = room.players.find(p => p.id === playerId);
+            if (!player) {
+                callback({ success: false, error: 'Oyuncu bulunamadı.' });
+                return;
+            }
+
+            // Eski socket mapping'i temizle
+            if (player.socketId && player.socketId !== socket.id) {
+                roomManager.socketToRoom.delete(player.socketId);
+            }
+
+            // Yeni socket bilgilerini güncelle
+            player.socketId = socket.id;
+            player.connected = true;
+            roomManager.socketToRoom.set(socket.id, { roomCode, playerId });
+
+            // Host kontrolü
+            if (player.id === room.hostId) {
+                room.hostSocketId = socket.id;
+            }
+
+            // Socket.IO odasına katıl
+            socket.join(roomCode);
+
+            console.log(`Yeniden bağlandı: ${player.name} → ${roomCode}`);
+
+            callback({
+                success: true,
+                room: sanitizeRoom(room)
+            });
+
+            // Diğer oyunculara bildir
+            io.to(roomCode).emit('room-updated', {
+                room: sanitizeRoom(room)
+            });
+        } catch (err) {
+            console.error('Yeniden bağlanma hatası:', err);
+            callback({ success: false, error: 'Yeniden bağlanılamadı.' });
+        }
+    });
+
     // ---- Oda Oluştur ----
     socket.on('create-room', ({ hostName }, callback) => {
         try {
