@@ -10,19 +10,43 @@ const VotingSystem = require('./game/VotingSystem');
 const app = express();
 const server = http.createServer(app);
 
-// CORS ayarları
-const allowedOrigins = [
-    'http://localhost:3000',
-    'http://localhost:3001',
-    process.env.FRONTEND_URL
-].filter(Boolean);
+// CORS ayarları - dinamik origin kontrolü
+function isAllowedOrigin(origin) {
+    if (!origin) return true; // Server-to-server istekleri
+    const allowed = [
+        'http://localhost:3000',
+        'http://localhost:3001',
+    ];
+    if (process.env.FRONTEND_URL) {
+        allowed.push(process.env.FRONTEND_URL);
+    }
+    // Tüm vercel.app subdomain'lerini kabul et
+    if (origin.endsWith('.vercel.app')) return true;
+    return allowed.includes(origin);
+}
 
-app.use(cors({ origin: allowedOrigins }));
+app.use(cors({
+    origin: function (origin, callback) {
+        if (isAllowedOrigin(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('CORS izni yok'));
+        }
+    },
+    credentials: true
+}));
 
 const io = new Server(server, {
     cors: {
-        origin: allowedOrigins,
-        methods: ['GET', 'POST']
+        origin: function (origin, callback) {
+            if (isAllowedOrigin(origin)) {
+                callback(null, true);
+            } else {
+                callback(new Error('CORS izni yok'));
+            }
+        },
+        methods: ['GET', 'POST'],
+        credentials: true
     },
     pingTimeout: 60000,
     pingInterval: 25000
