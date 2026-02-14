@@ -107,23 +107,156 @@ const wordCategories = {
   ]
 };
 
-// Benzer kelime çiftleri (similar_word twist'i için)
+// Benzer kelime çiftleri - Geniş havuz
+// Her çift [gerçek kelime, benzer kelime] formatında
 const similarWordPairs = [
-  ['Kedi', 'Köpek'], ['Pizza', 'Hamburger'], ['Futbol', 'Basketbol'],
-  ['Gitar', 'Keman'], ['Güneş', 'Ay'], ['Deniz', 'Okyanus'],
-  ['Doktor', 'Hemşire'], ['Polis', 'İtfaiyeci'], ['Araba', 'Motosiklet'],
-  ['Çay', 'Kahve'], ['Sinema', 'Tiyatro'], ['Dağ', 'Vadi'],
-  ['Yağmur', 'Kar'], ['Kitap', 'Defter'], ['Telefon', 'Bilgisayar'],
-  ['Kuş', 'Kelebek'], ['Aslan', 'Kaplan'], ['İstanbul', 'Ankara'],
-  ['Gül', 'Papatya'], ['Karate', 'Judo'], ['Piyano', 'Org'],
-  ['Batman', 'Spider-Man'], ['Baklava', 'Künefe'], ['Türk Kahvesi', 'Espresso'],
-  ['Japonya', 'Çin'], ['İtalya', 'İspanya'], ['Fransa', 'İngiltere'],
-  ['Robot', 'Drone'], ['Kayak', 'Snowboard'], ['Uçak', 'Helikopter'],
-  ['Tren', 'Otobüs'], ['Aşk', 'Dostluk'], ['Sabır', 'Cesaret'],
-  ['Mağara', 'Vadi'], ['Orman', 'Çöl'], ['Göl', 'Nehir'],
-  ['Şövalye', 'Samurai'], ['Kral', 'Padişah'], ['Viking', 'Korsan'],
-  ['Simit', 'Poğaça'], ['Döner', 'İskender'], ['Mantı', 'Börek'],
-  ['Masa Tenisi', 'Badminton'], ['Bisiklet', 'Scooter'], ['Gözlük', 'Dürbün']
+  // === YİYECEKLER ===
+  ['Pizza', 'Hamburger'], ['Pizza', 'Tost'], ['Hamburger', 'Sandviç'],
+  ['Döner', 'İskender'], ['Döner', 'Kebap'], ['Lahmacun', 'Pide'],
+  ['Börek', 'Gözleme'], ['Börek', 'Poğaça'], ['Mantı', 'Ravioli'],
+  ['Baklava', 'Künefe'], ['Baklava', 'Lokum'], ['Pasta', 'Kurabiye'],
+  ['Köfte', 'Kebap'], ['Simit', 'Poğaça'], ['Simit', 'Açma'],
+  ['Pilav', 'Makarna'], ['Çorba', 'Salata'], ['Sarma', 'Dolma'],
+  ['Kokoreç', 'Midye'], ['Tantuni', 'Dürüm'], ['Waffle', 'Krep'],
+  ['Dondurma', 'Milkshake'], ['Çikolata', 'Şeker'], ['Peynir', 'Tereyağı'],
+  ['Sucuk', 'Sosis'], ['Bal', 'Reçel'], ['Ekmek', 'Simit'],
+  ['Karnıyarık', 'İmam Bayıldı'], ['Mercimek', 'Fasulye'],
+  ['Patates Kızartması', 'Cips'], ['Tost', 'Sandviç'],
+
+  // === İÇECEKLER ===
+  ['Çay', 'Kahve'], ['Çay', 'Bitki Çayı'], ['Türk Kahvesi', 'Espresso'],
+  ['Latte', 'Cappuccino'], ['Ayran', 'Kefir'], ['Kola', 'Gazoz'],
+  ['Limonata', 'Portakal Suyu'], ['Smoothie', 'Milkshake'],
+  ['Sahlep', 'Boza'], ['Soda', 'Maden Suyu'], ['Frappe', 'Latte'],
+
+  // === HAYVANLAR ===
+  ['Kedi', 'Köpek'], ['Aslan', 'Kaplan'], ['Aslan', 'Leopar'],
+  ['Kurt', 'Tilki'], ['Kurt', 'Köpek'], ['Tilki', 'Çakal'],
+  ['Ayı', 'Panda'], ['Fil', 'Gergedan'], ['Fil', 'Suaygırı'],
+  ['Zürafa', 'Deve'], ['Zebra', 'At'], ['Kanguru', 'Koala'],
+  ['Penguen', 'Martı'], ['Yunus', 'Balina'], ['Köpekbalığı', 'Yunus'],
+  ['Tavşan', 'Sincap'], ['Tavşan', 'Hamster'], ['Kirpi', 'Sincap'],
+  ['Kaplumbağa', 'Timsah'], ['Yılan', 'Kertenkele'], ['Timsah', 'İguana'],
+  ['Kartal', 'Şahin'], ['Baykuş', 'Yarasa'], ['Papağan', 'Muhabbet Kuşu'],
+  ['Flamingo', 'Pelikan'], ['Karga', 'Güvercin'], ['Ördek', 'Kaz'],
+  ['Arı', 'Eşek Arısı'], ['Kelebek', 'Yusufçuk'], ['Karınca', 'Böcek'],
+  ['Örümcek', 'Akrep'], ['Ahtapot', 'Kalamar'], ['Maymun', 'Goril'],
+  ['İnek', 'Manda'], ['Koyun', 'Keçi'], ['At', 'Eşek'],
+  ['Çita', 'Leopar'], ['Deve', 'Lama'], ['Tavuk', 'Hindi'],
+
+  // === MESLEKLER ===
+  ['Doktor', 'Hemşire'], ['Doktor', 'Eczacı'], ['Doktor', 'Veteriner'],
+  ['Avukat', 'Savcı'], ['Avukat', 'Hakim'], ['Polis', 'İtfaiyeci'],
+  ['Polis', 'Asker'], ['Pilot', 'Kaptan'], ['Öğretmen', 'Profesör'],
+  ['Mühendis', 'Mimar'], ['Aktör', 'Yönetmen'], ['Ressam', 'Heykeltıraş'],
+  ['Gazeteci', 'Editör'], ['Fotoğrafçı', 'Kameraman'], ['Kasap', 'Fırıncı'],
+  ['Berber', 'Kuaför'], ['Terzi', 'Modacı'], ['Garson', 'Barmen'],
+  ['Şoför', 'Pilot'], ['Cerrah', 'Doktor'], ['Psikolog', 'Psikiyatrist'],
+
+  // === SPOR ===
+  ['Futbol', 'Basketbol'], ['Futbol', 'Hentbol'], ['Basketbol', 'Voleybol'],
+  ['Tenis', 'Masa Tenisi'], ['Tenis', 'Badminton'], ['Boks', 'Güreş'],
+  ['Karate', 'Judo'], ['Karate', 'Tekvando'], ['Kayak', 'Snowboard'],
+  ['Yüzme', 'Dalış'], ['Sörf', 'Yelken'], ['Bisiklet', 'Scooter'],
+  ['Golf', 'Bowling'], ['Beyzbol', 'Kriket'], ['Hokey', 'Buz Pateni'],
+  ['Okçuluk', 'Eskrim'], ['Dağcılık', 'Paraşüt'], ['Atletizm', 'Maraton'],
+  ['Halter', 'Güreş'], ['Bilardo', 'Dart'], ['Rugby', 'Amerikan Futbolu'],
+
+  // === ÜLKELER ===
+  ['Japonya', 'Çin'], ['Japonya', 'Güney Kore'], ['İtalya', 'İspanya'],
+  ['Fransa', 'İngiltere'], ['Fransa', 'Belçika'], ['Almanya', 'Avusturya'],
+  ['İsveç', 'Norveç'], ['Kanada', 'ABD'], ['Brezilya', 'Arjantin'],
+  ['Meksika', 'Kolombiya'], ['Mısır', 'Fas'], ['Hindistan', 'Pakistan'],
+  ['Türkiye', 'Yunanistan'], ['Avustralya', 'Yeni Zelanda'],
+  ['İsviçre', 'Avusturya'], ['Hollanda', 'Belçika'], ['İran', 'Irak'],
+  ['Tayland', 'Vietnam'], ['Peru', 'Şili'], ['Küba', 'Jamaika'],
+
+  // === ŞEHİRLER ===
+  ['İstanbul', 'Ankara'], ['İstanbul', 'İzmir'], ['Antalya', 'Bodrum'],
+  ['Paris', 'Londra'], ['Paris', 'Roma'], ['Tokyo', 'Seul'],
+  ['New York', 'Londra'], ['Barcelona', 'Madrid'], ['Berlin', 'Viyana'],
+  ['Dubai', 'Abu Dabi'], ['Amsterdam', 'Brüksel'], ['Mardin', 'Şanlıurfa'],
+  ['Trabzon', 'Rize'], ['Gaziantep', 'Adana'], ['Fethiye', 'Bodrum'],
+
+  // === OBJELER ===
+  ['Telefon', 'Tablet'], ['Telefon', 'Bilgisayar'], ['Bilgisayar', 'Laptop'],
+  ['Araba', 'Motosiklet'], ['Araba', 'Kamyon'], ['Uçak', 'Helikopter'],
+  ['Tren', 'Otobüs'], ['Tren', 'Metro'], ['Gemi', 'Denizaltı'],
+  ['Bisiklet', 'Motosiklet'], ['Kaykay', 'Paten'], ['Roket', 'Uçak'],
+  ['Kitap', 'Defter'], ['Kitap', 'Dergi'], ['Kalem', 'Tükenmez'],
+  ['Saat', 'Kronometre'], ['Gözlük', 'Lens'], ['Gözlük', 'Dürbün'],
+  ['Şemsiye', 'Yağmurluk'], ['Çanta', 'Sırt Çantası'], ['Ayna', 'Cam'],
+  ['Mum', 'Fener'], ['Kamera', 'Fotoğraf Makinesi'], ['Kulaklık', 'Hoparlör'],
+  ['Yastık', 'Yorgan'], ['Sandalye', 'Koltuk'], ['Masa', 'Sehpa'],
+  ['Lamba', 'Avize'], ['Halı', 'Kilim'], ['Perde', 'Stor'],
+
+  // === DOĞA ===
+  ['Güneş', 'Ay'], ['Yıldız', 'Gezegen'], ['Bulut', 'Sis'],
+  ['Yağmur', 'Kar'], ['Yağmur', 'Dolu'], ['Fırtına', 'Kasırga'],
+  ['Deprem', 'Tsunami'], ['Yanardağ', 'Jeotermal'], ['Şimşek', 'Gök Gürültüsü'],
+  ['Orman', 'Çöl'], ['Orman', 'Bataklık'], ['Deniz', 'Okyanus'],
+  ['Göl', 'Nehir'], ['Dağ', 'Tepe'], ['Vadi', 'Kanyon'],
+  ['Mağara', 'Tünel'], ['Ada', 'Yarımada'], ['Plaj', 'Sahil'],
+  ['Şelale', 'Çağlayan'], ['Buzul', 'Buz Dağı'],
+  ['Gül', 'Papatya'], ['Gül', 'Lale'], ['Lale', 'Sümbül'],
+  ['Çam', 'Meşe'], ['Palmiye', 'Hurma'], ['Kaktüs', 'Aloe Vera'],
+  ['Mantar', 'Yosun'], ['Mercan', 'Deniz Yıldızı'],
+
+  // === EĞLENCE ===
+  ['Sinema', 'Tiyatro'], ['Konser', 'Festival'], ['Sirk', 'Lunapark'],
+  ['Piknik', 'Kamp'], ['Barbekü', 'Mangal'], ['Parti', 'Düğün'],
+  ['Doğum Günü', 'Yılbaşı'], ['Bowling', 'Bilardo'],
+  ['Paintball', 'Lazer Tag'], ['Kaçış Odası', 'Bulmaca'],
+  ['Rafting', 'Kano'], ['ATV', 'Safari'],
+
+  // === MÜZİK ===
+  ['Gitar', 'Bas Gitar'], ['Gitar', 'Ukulele'], ['Piyano', 'Org'],
+  ['Keman', 'Viyola'], ['Keman', 'Çello'], ['Davul', 'Bateri'],
+  ['Davul', 'Darbuka'], ['Flüt', 'Klarnet'], ['Saksafon', 'Trompet'],
+  ['Bağlama', 'Ud'], ['Ney', 'Kaval'], ['Kanun', 'Arp'],
+  ['Zurna', 'Klarnet'], ['Tambur', 'Kemençe'], ['Akordeon', 'Armonika'],
+
+  // === FİLMLER ===
+  ['Harry Potter', 'Yüzüklerin Efendisi'], ['Batman', 'Spider-Man'],
+  ['Batman', 'Superman'], ['Star Wars', 'Star Trek'], ['Joker', 'Deadpool'],
+  ['Shrek', 'Toy Story'], ['Frozen', 'Tangled'], ['Nemo', 'Dory'],
+  ['Matrix', 'Inception'], ['Avengers', 'Justice League'],
+  ['Jurassic Park', 'King Kong'], ['Rocky', 'Karate Kid'],
+  ['James Bond', 'Mission Impossible'], ['Fast Furious', 'Need for Speed'],
+  ['Hobbit', 'Yüzüklerin Efendisi'], ['Cars', 'Turbo'],
+
+  // === KAVRAMLAR ===
+  ['Aşk', 'Tutku'], ['Aşk', 'Dostluk'], ['Dostluk', 'Kardeşlik'],
+  ['Özgürlük', 'Bağımsızlık'], ['Barış', 'Huzur'], ['Adalet', 'Eşitlik'],
+  ['Cesaret', 'Kahramanlık'], ['Mutluluk', 'Neşe'], ['Korku', 'Dehşet'],
+  ['Hayal', 'Rüya'], ['Umut', 'İnanç'], ['Sabır', 'Metanet'],
+  ['Merak', 'Heyecan'], ['Gurur', 'Onur'], ['Kıskançlık', 'Haset'],
+  ['Macera', 'Keşif'], ['Gizem', 'Sır'], ['Sihir', 'Büyü'],
+  ['Şans', 'Kader'], ['Nostalji', 'Özlem'],
+
+  // === TEKNOLOJİ ===
+  ['Robot', 'Yapay Zeka'], ['Robot', 'Drone'], ['Drone', 'Helikopter'],
+  ['Hologram', 'Sanal Gerçeklik'], ['Bitcoin', 'Ethereum'],
+  ['WiFi', 'Bluetooth'], ['GPS', 'Pusula'], ['TikTok', 'Instagram'],
+  ['YouTube', 'Twitch'], ['Netflix', 'Disney Plus'], ['Spotify', 'Apple Music'],
+  ['WhatsApp', 'Telegram'], ['Google', 'Bing'], ['iPhone', 'Samsung'],
+  ['PlayStation', 'Xbox'], ['Minecraft', 'Roblox'], ['Fortnite', 'PUBG'],
+  ['Nintendo', 'Sega'], ['Selfie', 'Fotoğraf'], ['Emoji', 'Sticker'],
+
+  // === TARİH ===
+  ['Piramit', 'Sfenks'], ['Kolezyum', 'Arena'], ['Gladyatör', 'Savaşçı'],
+  ['Şövalye', 'Samurai'], ['Viking', 'Korsan'], ['Ninja', 'Samurai'],
+  ['Firavun', 'Padişah'], ['Kral', 'İmparator'], ['Kraliçe', 'Prenses'],
+  ['Kale', 'Saray'], ['Tapınak', 'Kilise'], ['Hazine', 'Altın'],
+
+  // === KARIŞIK CROSS-KATEGORİ ===
+  ['Araba', 'Uçak'], ['Dağ', 'Deniz'], ['Yaz', 'Kış'],
+  ['Gece', 'Gündüz'], ['Sabah', 'Akşam'], ['Güneş', 'Yağmur'],
+  ['Ateş', 'Su'], ['Sıcak', 'Soğuk'], ['Büyük', 'Küçük'],
+  ['Hızlı', 'Yavaş'], ['Sessiz', 'Gürültülü'], ['Tatlı', 'Tuzlu'],
+  ['Okul', 'Üniversite'], ['Doğu', 'Batı'], ['Kuzey', 'Güney'],
+  ['Altın', 'Gümüş'], ['Elmas', 'Yakut'], ['Ipek', 'Kadife'],
+  ['Kalem', 'Silgi'], ['Çekiç', 'Tornavida'], ['Makas', 'Bıçak']
 ];
 
 // Tüm kelimeleri tek liste halinde al
@@ -132,7 +265,6 @@ function getAllWords() {
   for (const category of Object.values(wordCategories)) {
     allWords.push(...category);
   }
-  // Tekrar edenleri kaldır
   return [...new Set(allWords)];
 }
 
@@ -145,6 +277,10 @@ function getRandomWord() {
 // Benzer kelime çifti seç
 function getRandomSimilarPair() {
   const pair = similarWordPairs[Math.floor(Math.random() * similarWordPairs.length)];
+  // %50 ihtimalle çifti ters çevir (böylece her iki kelime de ana kelime olabilir)
+  if (Math.random() < 0.5) {
+    return [pair[1], pair[0]];
+  }
   return pair;
 }
 

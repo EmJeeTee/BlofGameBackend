@@ -114,11 +114,18 @@ class GameEngine {
                     word = getRandomWord();
             }
         } else {
-            // Standart mod - benzer kelime ile oyna
+            // Standart mod - %50 BLÖF, %50 benzer kelime
             bluffCount = GameEngine.getStandardBluffCount(playerCount);
-            const pair = getRandomSimilarPair();
-            word = pair[0];
-            bluffWord = pair[1];
+            if (Math.random() < 0.5) {
+                // Benzer kelime modu
+                const pair = getRandomSimilarPair();
+                word = pair[0];
+                bluffWord = pair[1];
+            } else {
+                // Klasik BLÖF modu
+                word = getRandomWord();
+                bluffWord = null; // null = "BLÖF" yazacak
+            }
         }
 
         room.word = word;
