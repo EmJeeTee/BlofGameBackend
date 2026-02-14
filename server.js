@@ -54,6 +54,8 @@ const io = new Server(server, {
 
 const roomManager = new RoomManager();
 
+app.use(express.json());
+
 // Health check endpoint
 app.get('/', (req, res) => {
     res.json({
@@ -61,6 +63,77 @@ app.get('/', (req, res) => {
         message: 'Blöf Oyunu Backend Sunucusu',
         rooms: roomManager.rooms.size
     });
+});
+
+// ========== Admin API ==========
+const ADMIN_KEY = process.env.ADMIN_KEY || 'blof-admin-2024';
+
+function adminAuth(req, res, next) {
+    const key = req.headers['x-admin-key'];
+    if (key !== ADMIN_KEY) {
+        return res.status(401).json({ error: 'Yetkisiz erişim.' });
+    }
+    next();
+}
+
+// Tüm odaları listele
+app.get('/admin/rooms', adminAuth, (req, res) => {
+    const rooms = [];
+    for (const [code, room] of roomManager.rooms) {
+        rooms.push({
+            code,
+            state: room.state,
+            mode: room.mode,
+            playerCount: room.players.filter(p => p.connected).length,
+            totalPlayers: room.players.length,
+            players: room.players.map(p => ({
+                name: p.name,
+                connected: p.connected,
+                isHost: p.isHost
+            })),
+            createdAt: room.createdAt,
+            ageMinutes: Math.round((Date.now() - room.createdAt) / 60000)
+        });
+    }
+    res.json({ rooms, total: rooms.length });
+});
+
+// Belirli bir odayı sil
+app.delete('/admin/rooms/:code', adminAuth, (req, res) => {
+    const code = req.params.code.toUpperCase();
+    const room = roomManager.getRoom(code);
+    if (!room) {
+        return res.status(404).json({ error: 'Oda bulunamadı.' });
+    }
+
+    // Socket mapping'leri temizle
+    for (const player of room.players) {
+        if (player.socketId) {
+            // Oyuncuya bildirim gönder
+            io.to(player.socketId).emit('room-closed', { reason: 'Oda admin tarafından kapatıldı.' });
+            roomManager.socketToRoom.delete(player.socketId);
+        }
+    }
+    roomManager.rooms.delete(code);
+
+    res.json({ success: true, message: `Oda ${code} silindi.` });
+});
+
+// Tüm odaları sil
+app.delete('/admin/rooms', adminAuth, (req, res) => {
+    const count = roomManager.rooms.size;
+
+    for (const [code, room] of roomManager.rooms) {
+        for (const player of room.players) {
+            if (player.socketId) {
+                io.to(player.socketId).emit('room-closed', { reason: 'Tüm odalar temizlendi.' });
+                roomManager.socketToRoom.delete(player.socketId);
+            }
+        }
+    }
+    roomManager.rooms.clear();
+
+    res.json({ success: true, message: `${count} oda silindi.` });
 });
 
 // ========== Socket.IO Event Handlers ==========
