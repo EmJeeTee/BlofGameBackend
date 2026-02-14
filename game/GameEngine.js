@@ -41,27 +41,33 @@ class GameEngine {
         return Math.max(1, Math.floor(playerCount / 4));
     }
 
-    // %50 BLÖF, %50 benzer kelime seçimi
-    static pickWordWithChance() {
-        if (Math.random() < 0.5) {
-            // Benzer kelime modu
-            const pair = getRandomSimilarPair();
-            return { word: pair[0], bluffWord: pair[1] };
+    // Kelime seç (wordType'a göre: 'similar' veya 'random')
+    static pickWord(wordType = 'similar', usedWords = []) {
+        if (wordType === 'similar') {
+            const pair = getRandomSimilarPair(usedWords);
+            return { word: pair[0], bluffWord: pair[1], usedPair: pair };
         } else {
-            // Klasik BLÖF modu
-            return { word: getRandomWord(), bluffWord: null };
+            // Klasik BLÖF modu - random kelime
+            const word = getRandomWord(usedWords.flat ? usedWords.flat() : usedWords);
+            return { word, bluffWord: null, usedPair: [word] };
         }
     }
 
     // Oyunu başlat
-    static startGame(room, mode = 'standard') {
+    static startGame(room, mode = 'standard', wordType = 'similar') {
         room.mode = mode;
+        room.wordType = wordType;
         room.state = 'playing';
         room.currentRound = 1;
         room.votes = {};
         room.revoteEligible = [];
         room.revoteVotes = {};
         room.twist = null;
+
+        // usedWords array'i yoksa oluştur
+        if (!room.usedWords) {
+            room.usedWords = [];
+        }
 
         const activePlayers = room.players.filter(p => p.connected);
         const playerCount = activePlayers.length;
@@ -86,16 +92,20 @@ class GameEngine {
                         Math.max(2, GameEngine.getStandardBluffCount(playerCount) * 2),
                         playerCount - 1
                     );
-                    const pick = GameEngine.pickWordWithChance();
+                    const pick = GameEngine.pickWord(wordType, room.usedWords);
                     word = pick.word;
                     bluffWord = pick.bluffWord;
+                    room.usedWords.push(pick.usedPair);
                     break;
                 }
 
-                case 'all_innocent':
+                case 'all_innocent': {
                     bluffCount = 0;
-                    word = getRandomWord();
+                    const pick = GameEngine.pickWord(wordType, room.usedWords);
+                    word = pick.word;
+                    room.usedWords.push(pick.usedPair);
                     break;
+                }
 
                 case 'all_suspect':
                     bluffCount = playerCount;
@@ -105,34 +115,38 @@ class GameEngine {
                 case 'reverse': {
                     const innocentCount = Math.max(1, Math.floor(playerCount / 4));
                     bluffCount = playerCount - innocentCount;
-                    const pick = GameEngine.pickWordWithChance();
+                    const pick = GameEngine.pickWord(wordType, room.usedWords);
                     word = pick.word;
                     bluffWord = pick.bluffWord;
+                    room.usedWords.push(pick.usedPair);
                     break;
                 }
 
                 case 'similar_word': {
                     bluffCount = GameEngine.getStandardBluffCount(playerCount);
                     // Bu twist'te her zaman benzer kelime kullan
-                    const pair = getRandomSimilarPair();
+                    const pair = getRandomSimilarPair(room.usedWords);
                     word = pair[0];
                     bluffWord = pair[1];
+                    room.usedWords.push(pair);
                     break;
                 }
 
                 default: {
                     bluffCount = GameEngine.getStandardBluffCount(playerCount);
-                    const pick = GameEngine.pickWordWithChance();
+                    const pick = GameEngine.pickWord(wordType, room.usedWords);
                     word = pick.word;
                     bluffWord = pick.bluffWord;
+                    room.usedWords.push(pick.usedPair);
                 }
             }
         } else {
-            // Standart mod - %50 BLÖF, %50 benzer kelime
+            // Standart mod - wordType'a göre kelime seç
             bluffCount = GameEngine.getStandardBluffCount(playerCount);
-            const pick = GameEngine.pickWordWithChance();
+            const pick = GameEngine.pickWord(wordType, room.usedWords);
             word = pick.word;
             bluffWord = pick.bluffWord;
+            room.usedWords.push(pick.usedPair);
         }
 
         room.word = word;

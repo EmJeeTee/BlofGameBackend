@@ -243,7 +243,7 @@ io.on('connection', (socket) => {
     });
 
     // ---- Oyunu Başlat ----
-    socket.on('start-game', ({ roomCode, mode }, callback) => {
+    socket.on('start-game', ({ roomCode, mode, wordType }, callback) => {
         try {
             const room = roomManager.getRoom(roomCode);
             if (!room) {
@@ -258,13 +258,13 @@ io.on('connection', (socket) => {
                 return;
             }
 
-            const result = GameEngine.startGame(room, mode);
+            const result = GameEngine.startGame(room, mode, wordType || 'similar');
             if (result.error) {
                 callback({ success: false, error: result.error });
                 return;
             }
 
-            console.log(`Oyun başladı: ${roomCode} (Mod: ${mode}, Blöfçi: ${result.bluffCount})`);
+            console.log(`Oyun başladı: ${roomCode} (Mod: ${mode}, Kelime Türü: ${wordType || 'similar'}, Blöfçi: ${result.bluffCount})`);
 
             // Her oyuncuya kendi kelimesini gönder
             const activePlayers = room.players.filter(p => p.connected);

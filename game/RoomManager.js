@@ -31,6 +31,7 @@ class RoomManager {
             ],
             state: 'lobby', // lobby | playing | voting | revoting | result
             mode: 'standard', // standard | fun
+            wordType: 'similar', // similar | random
             currentRound: 0,
             totalRounds: 3,
             word: null,
@@ -41,6 +42,7 @@ class RoomManager {
             revoteVotes: {},
             timerDuration: null,
             silentRound: null,
+            usedWords: [], // Kullanılmış kelimeler (tekrar engelleme)
             createdAt: Date.now()
         };
 
@@ -159,6 +161,7 @@ class RoomManager {
         room.revoteVotes = {};
         room.timerDuration = null;
         room.silentRound = null;
+        // usedWords sıfırlanmaz - aynı masada kelime tekrarı olmasın
 
         return room;
     }
