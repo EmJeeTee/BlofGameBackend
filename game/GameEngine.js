@@ -1,7 +1,7 @@
 const { getRandomWord, getRandomSimilarPair } = require('./wordList');
 const { shuffleArray, pickRandom } = require('../utils/helpers');
 
-// Eğlence modu twist'leri
+// Eğlence modu twist'leri (silent_round ve time_pressure kaldırıldı)
 const TWISTS = [
     {
         id: 'double_agent',
@@ -28,18 +28,6 @@ const TWISTS = [
         description: 'Blöfçiler çoğunlukta, masumlar azınlıkta!'
     },
     {
-        id: 'silent_round',
-        name: 'Sessiz Tur',
-        emoji: '🤫',
-        description: 'Bir turda konuşma yasak! Sadece mimik ve jestler.'
-    },
-    {
-        id: 'time_pressure',
-        name: 'Zaman Baskısı',
-        emoji: '⏱️',
-        description: 'Her tur 30 saniye ile sınırlı!'
-    },
-    {
         id: 'similar_word',
         name: 'Kelime Yakını',
         emoji: '🔤',
@@ -50,11 +38,6 @@ const TWISTS = [
 class GameEngine {
     // Standart modda blöfçi sayısını hesapla
     static getStandardBluffCount(playerCount) {
-        // 2-3 oyuncu: 1 blöfçi
-        // 4-7 oyuncu: 1 blöfçi
-        // 8-11 oyuncu: 2 blöfçi
-        // 12-15 oyuncu: 3 blöfçi
-        // vs.
         return Math.max(1, Math.floor(playerCount / 4));
     }
 
@@ -66,6 +49,9 @@ class GameEngine {
         room.votes = {};
         room.revoteEligible = [];
         room.revoteVotes = {};
+        room.twist = null;
+        room.timerDuration = null;
+        room.silentRound = null;
 
         const activePlayers = room.players.filter(p => p.connected);
         const playerCount = activePlayers.length;
@@ -90,7 +76,10 @@ class GameEngine {
                         Math.max(2, GameEngine.getStandardBluffCount(playerCount) * 2),
                         playerCount - 1
                     );
-                    word = getRandomWord();
+                    // Benzer kelime kullan
+                    const daPair = getRandomSimilarPair();
+                    word = daPair[0];
+                    bluffWord = daPair[1];
                     break;
 
                 case 'all_innocent':
@@ -107,19 +96,10 @@ class GameEngine {
                     // Masumlar azınlıkta
                     const innocentCount = Math.max(1, Math.floor(playerCount / 4));
                     bluffCount = playerCount - innocentCount;
-                    word = getRandomWord();
-                    break;
-
-                case 'silent_round':
-                    bluffCount = GameEngine.getStandardBluffCount(playerCount);
-                    word = getRandomWord();
-                    room.silentRound = Math.floor(Math.random() * 3) + 1; // 1, 2 veya 3
-                    break;
-
-                case 'time_pressure':
-                    bluffCount = GameEngine.getStandardBluffCount(playerCount);
-                    word = getRandomWord();
-                    room.timerDuration = 30; // 30 saniye
+                    // Benzer kelime kullan
+                    const revPair = getRandomSimilarPair();
+                    word = revPair[0];
+                    bluffWord = revPair[1];
                     break;
 
                 case 'similar_word':
@@ -134,9 +114,11 @@ class GameEngine {
                     word = getRandomWord();
             }
         } else {
-            // Standart mod
+            // Standart mod - benzer kelime ile oyna
             bluffCount = GameEngine.getStandardBluffCount(playerCount);
-            word = getRandomWord();
+            const pair = getRandomSimilarPair();
+            word = pair[0];
+            bluffWord = pair[1];
         }
 
         room.word = word;
@@ -146,7 +128,7 @@ class GameEngine {
             // Herkes farklı kelime görüyor
             room.bluffPlayerIds = activePlayers.map(p => p.id);
             const allWords = require('./wordList').getAllWords();
-            const shuffled = require('../utils/helpers').shuffleArray([...allWords]);
+            const shuffled = shuffleArray([...allWords]);
             const playerWords = {};
             for (let i = 0; i < activePlayers.length; i++) {
                 playerWords[activePlayers[i].id] = shuffled[i % shuffled.length];
@@ -187,9 +169,7 @@ class GameEngine {
             success: true,
             assignments,
             twist,
-            bluffCount,
-            timerDuration: room.timerDuration,
-            silentRound: room.silentRound
+            bluffCount
         };
     }
 

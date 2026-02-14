@@ -203,9 +203,6 @@ io.on('connection', (socket) => {
                         isBluff: assignment.isBluff,
                         round: 1,
                         totalRounds: room.totalRounds,
-                        twist: result.twist,
-                        timerDuration: result.timerDuration,
-                        silentRound: result.silentRound,
                         mode
                     });
                 }
