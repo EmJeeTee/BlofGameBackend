@@ -256,7 +256,51 @@ const similarWordPairs = [
   ['Hızlı', 'Yavaş'], ['Sessiz', 'Gürültülü'], ['Tatlı', 'Tuzlu'],
   ['Okul', 'Üniversite'], ['Doğu', 'Batı'], ['Kuzey', 'Güney'],
   ['Altın', 'Gümüş'], ['Elmas', 'Yakut'], ['Ipek', 'Kadife'],
-  ['Kalem', 'Silgi'], ['Çekiç', 'Tornavida'], ['Makas', 'Bıçak']
+  ['Kalem', 'Silgi'], ['Çekiç', 'Tornavida'], ['Makas', 'Bıçak'],
+
+  // === MEKANLAR ===
+  ['Hastane', 'Eczane'], ['Okul', 'Kütüphane'], ['Market', 'Bakkal'],
+  ['Restoran', 'Kafe'], ['Otel', 'Hostel'], ['Cami', 'Kilise'],
+  ['Müze', 'Galeri'], ['Havalimanı', 'Otogar'], ['Stadyum', 'Arena'],
+  ['Park', 'Bahçe'], ['Plaj', 'Havuz'], ['AVM', 'Çarşı'],
+  ['Postane', 'Kargo'], ['Banka', 'ATM'], ['Hastane', 'Klinik'],
+
+  // === GİYSİLER ===
+  ['Gömlek', 'Tişört'], ['Pantolon', 'Şort'], ['Ceket', 'Mont'],
+  ['Etek', 'Elbise'], ['Çorap', 'Terlik'], ['Şapka', 'Bere'],
+  ['Eldiven', 'Atkı'], ['Bot', 'Ayakkabı'], ['Kravat', 'Papyon'],
+  ['Pijama', 'Eşofman'], ['Mayo', 'Bikini'], ['Yelek', 'Hırka'],
+
+  // === MEVSİMLER & ZAMAN ===
+  ['İlkbahar', 'Sonbahar'], ['Yaz', 'İlkbahar'], ['Kış', 'Sonbahar'],
+  ['Ocak', 'Şubat'], ['Pazartesi', 'Salı'], ['Hafta Sonu', 'Tatil'],
+
+  // === MEYVELER & SEBZELER ===
+  ['Elma', 'Armut'], ['Portakal', 'Mandalina'], ['Çilek', 'Ahududu'],
+  ['Karpuz', 'Kavun'], ['Üzüm', 'Kiraz'], ['Muz', 'Ananas'],
+  ['Limon', 'Greyfurt'], ['Şeftali', 'Kayısı'], ['Erik', 'Vişne'],
+  ['Domates', 'Biber'], ['Salatalık', 'Kabak'], ['Patlıcan', 'Biber'],
+  ['Havuç', 'Turp'], ['Soğan', 'Sarımsak'], ['Marul', 'Ispanak'],
+  ['Brokoli', 'Karnabahar'], ['Bezelye', 'Fasulye'], ['Patates', 'Yer Elması'],
+
+  // === EK YİYECEK ÇİFTLERİ ===
+  ['Çiğ Köfte', 'Falafel'], ['Sushi', 'Sashimi'], ['Kumpir', 'Cağ Kebap'],
+  ['Helva', 'Lokum'], ['Tavuk', 'Hindi'], ['Salata', 'Meze'],
+  ['Yumurta', 'Omlet'], ['Çorba', 'Güveç'], ['Makarna', 'Erişte'],
+
+  // === EK HAYVAN ÇİFTLERİ ===
+  ['Serçe', 'Saka'], ['Akbaba', 'Kartal'], ['Suaygırı', 'Gergedan'],
+  ['Leopar', 'Jaguar'], ['Hamster', 'Kobay'], ['Koala', 'Ağaç Faresi'],
+  ['Güvercin', 'Kumru'], ['Tavus Kuşu', 'Flamingo'], ['Fok', 'Deniz Aslanı'],
+
+  // === EK SPOR ÇİFTLERİ ===
+  ['Voleybol', 'Hentbol'], ['Jimnastik', 'Bale'], ['Kano', 'Kürek'],
+  ['Satranç', 'Dama'], ['Triatlon', 'Maraton'], ['Buz Pateni', 'Paten'],
+
+  // === EK TEKNOLOJİ ===
+  ['Laptop', 'Tablet'], ['Akıllı Saat', 'Bileklik'], ['VR', 'AR'],
+  ['ChatGPT', 'Google'], ['Twitter', 'Facebook'], ['Uber', 'Taksi'],
+  ['Amazon', 'Trendyol'], ['Zoom', 'Teams'], ['Reddit', 'Forum']
 ];
 
 // Tüm kelimeleri tek liste halinde al

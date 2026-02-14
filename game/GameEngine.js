@@ -1,7 +1,7 @@
 const { getRandomWord, getRandomSimilarPair } = require('./wordList');
 const { shuffleArray, pickRandom } = require('../utils/helpers');
 
-// Eğlence modu twist'leri (silent_round ve time_pressure kaldırıldı)
+// Eğlence modu twist'leri
 const TWISTS = [
     {
         id: 'double_agent',
@@ -41,6 +41,18 @@ class GameEngine {
         return Math.max(1, Math.floor(playerCount / 4));
     }
 
+    // %50 BLÖF, %50 benzer kelime seçimi
+    static pickWordWithChance() {
+        if (Math.random() < 0.5) {
+            // Benzer kelime modu
+            const pair = getRandomSimilarPair();
+            return { word: pair[0], bluffWord: pair[1] };
+        } else {
+            // Klasik BLÖF modu
+            return { word: getRandomWord(), bluffWord: null };
+        }
+    }
+
     // Oyunu başlat
     static startGame(room, mode = 'standard') {
         room.mode = mode;
@@ -50,8 +62,6 @@ class GameEngine {
         room.revoteEligible = [];
         room.revoteVotes = {};
         room.twist = null;
-        room.timerDuration = null;
-        room.silentRound = null;
 
         const activePlayers = room.players.filter(p => p.connected);
         const playerCount = activePlayers.length;
@@ -71,16 +81,16 @@ class GameEngine {
             room.twist = twist;
 
             switch (twist.id) {
-                case 'double_agent':
+                case 'double_agent': {
                     bluffCount = Math.min(
                         Math.max(2, GameEngine.getStandardBluffCount(playerCount) * 2),
                         playerCount - 1
                     );
-                    // Benzer kelime kullan
-                    const daPair = getRandomSimilarPair();
-                    word = daPair[0];
-                    bluffWord = daPair[1];
+                    const pick = GameEngine.pickWordWithChance();
+                    word = pick.word;
+                    bluffWord = pick.bluffWord;
                     break;
+                }
 
                 case 'all_innocent':
                     bluffCount = 0;
@@ -88,51 +98,47 @@ class GameEngine {
                     break;
 
                 case 'all_suspect':
-                    bluffCount = playerCount; // Herkes farklı kelime
+                    bluffCount = playerCount;
                     word = null;
                     break;
 
-                case 'reverse':
-                    // Masumlar azınlıkta
+                case 'reverse': {
                     const innocentCount = Math.max(1, Math.floor(playerCount / 4));
                     bluffCount = playerCount - innocentCount;
-                    // Benzer kelime kullan
-                    const revPair = getRandomSimilarPair();
-                    word = revPair[0];
-                    bluffWord = revPair[1];
+                    const pick = GameEngine.pickWordWithChance();
+                    word = pick.word;
+                    bluffWord = pick.bluffWord;
                     break;
+                }
 
-                case 'similar_word':
+                case 'similar_word': {
                     bluffCount = GameEngine.getStandardBluffCount(playerCount);
+                    // Bu twist'te her zaman benzer kelime kullan
                     const pair = getRandomSimilarPair();
                     word = pair[0];
                     bluffWord = pair[1];
                     break;
+                }
 
-                default:
+                default: {
                     bluffCount = GameEngine.getStandardBluffCount(playerCount);
-                    word = getRandomWord();
+                    const pick = GameEngine.pickWordWithChance();
+                    word = pick.word;
+                    bluffWord = pick.bluffWord;
+                }
             }
         } else {
             // Standart mod - %50 BLÖF, %50 benzer kelime
             bluffCount = GameEngine.getStandardBluffCount(playerCount);
-            if (Math.random() < 0.5) {
-                // Benzer kelime modu
-                const pair = getRandomSimilarPair();
-                word = pair[0];
-                bluffWord = pair[1];
-            } else {
-                // Klasik BLÖF modu
-                word = getRandomWord();
-                bluffWord = null; // null = "BLÖF" yazacak
-            }
+            const pick = GameEngine.pickWordWithChance();
+            word = pick.word;
+            bluffWord = pick.bluffWord;
         }
 
         room.word = word;
 
         // Blöfçileri seç
         if (twist && twist.id === 'all_suspect') {
-            // Herkes farklı kelime görüyor
             room.bluffPlayerIds = activePlayers.map(p => p.id);
             const allWords = require('./wordList').getAllWords();
             const shuffled = shuffleArray([...allWords]);
@@ -142,7 +148,6 @@ class GameEngine {
             }
             room.playerWords = playerWords;
         } else if (bluffCount === 0) {
-            // Herkes masum
             room.bluffPlayerIds = [];
         } else {
             const bluffPlayers = pickRandom(activePlayers, bluffCount);
@@ -191,7 +196,6 @@ class GameEngine {
         return { nextState: 'playing', round: room.currentRound };
     }
 
-    // Twist listesini dön
     static getTwists() {
         return TWISTS;
     }
