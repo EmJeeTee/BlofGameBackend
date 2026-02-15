@@ -174,16 +174,34 @@ io.on('connection', (socket) => {
             // Socket.IO odasına katıl
             socket.join(roomCode);
 
-            console.log(`Yeniden bağlandı: ${player.name} → ${roomCode}`);
+            console.log(`Yeniden bağlandı: ${player.name} → ${roomCode} (state: ${room.state})`);
+
+            // Oyun devam ediyorsa game state'i de gönder
+            let gameState = null;
+            if (room.state === 'playing' && room.assignments && room.assignments[playerId]) {
+                gameState = {
+                    word: room.assignments[playerId].word,
+                    isBluff: room.assignments[playerId].isBluff,
+                    round: room.currentRound,
+                    totalRounds: room.totalRounds,
+                    mode: room.mode
+                };
+            }
 
             callback({
                 success: true,
-                room: sanitizeRoom(room)
+                room: sanitizeRoom(room),
+                gameState
             });
 
             // Diğer oyunculara bildir
             io.to(roomCode).emit('room-updated', {
                 room: sanitizeRoom(room)
+            });
+
+            // Reconnect bildirimi gönder
+            socket.to(roomCode).emit('player-reconnected', {
+                playerName: player.name
             });
         } catch (err) {
             console.error('Yeniden bağlanma hatası:', err);
@@ -214,7 +232,55 @@ io.on('connection', (socket) => {
     // ---- Odaya Katıl ----
     socket.on('join-room', ({ code, playerName }, callback) => {
         try {
-            const result = roomManager.joinRoom(code.toUpperCase(), playerName, socket.id);
+            const upperCode = code.toUpperCase();
+            const room = roomManager.getRoom(upperCode);
+
+            // Aynı isimle disconnected oyuncu varsa reconnect yap
+            if (room) {
+                const disconnectedPlayer = room.players.find(
+                    p => p.name.toLowerCase() === playerName.toLowerCase() && !p.connected
+                );
+                if (disconnectedPlayer) {
+                    // Reconnect
+                    disconnectedPlayer.socketId = socket.id;
+                    disconnectedPlayer.connected = true;
+                    roomManager.socketToRoom.set(socket.id, { roomCode: upperCode, playerId: disconnectedPlayer.id });
+
+                    if (disconnectedPlayer.id === room.hostId) {
+                        room.hostSocketId = socket.id;
+                    }
+
+                    socket.join(upperCode);
+                    console.log(`${playerName} tekrar bağlandı: ${upperCode}`);
+
+                    // Oyun devam ediyorsa game state gönder
+                    let gameState = null;
+                    if (room.state === 'playing' && room.assignments && room.assignments[disconnectedPlayer.id]) {
+                        gameState = {
+                            word: room.assignments[disconnectedPlayer.id].word,
+                            isBluff: room.assignments[disconnectedPlayer.id].isBluff,
+                            round: room.currentRound,
+                            totalRounds: room.totalRounds,
+                            mode: room.mode
+                        };
+                    }
+
+                    io.to(upperCode).emit('room-updated', {
+                        room: sanitizeRoom(room)
+                    });
+
+                    callback({
+                        success: true,
+                        roomCode: upperCode,
+                        playerId: disconnectedPlayer.id,
+                        room: sanitizeRoom(room),
+                        gameState
+                    });
+                    return;
+                }
+            }
+
+            const result = roomManager.joinRoom(upperCode, playerName, socket.id);
 
             if (result.error) {
                 callback({ success: false, error: result.error });
@@ -320,6 +386,142 @@ io.on('connection', (socket) => {
         }
     });
 
+    // ---- Kelime Değiştirme İsteği (Host) ----
+    socket.on('skip-word-request', ({ roomCode }, callback) => {
+        try {
+            const room = roomManager.getRoom(roomCode);
+            if (!room) {
+                callback({ success: false, error: 'Oda bulunamadı.' });
+                return;
+            }
+
+            const playerInfo = roomManager.getPlayerInfo(socket.id);
+            if (!playerInfo || playerInfo.playerId !== room.hostId) {
+                callback({ success: false, error: 'Sadece masa sahibi kelime değiştirme önerebilir.' });
+                return;
+            }
+
+            if (room.state !== 'playing') {
+                callback({ success: false, error: 'Kelime sadece oyun sırasında değiştirilebilir.' });
+                return;
+            }
+
+            if (room.skipVoteActive) {
+                callback({ success: false, error: 'Zaten bir oylama devam ediyor.' });
+                return;
+            }
+
+            // Oylama başlat
+            room.skipVoteActive = true;
+            room.skipVotes = {};
+            // Host otomatik evet oyu verir
+            room.skipVotes[playerInfo.playerId] = true;
+
+            const activePlayers = room.players.filter(p => p.connected);
+
+            console.log(`Kelime değiştirme oylaması: ${roomCode}`);
+
+            io.to(roomCode).emit('skip-word-vote-started', {
+                requestedBy: playerInfo.playerId,
+                votedCount: 1,
+                totalPlayers: activePlayers.length
+            });
+
+            // Tek oyuncu varsa veya host tek kişi ise otomatik geç
+            if (activePlayers.length <= 1) {
+                const result = GameEngine.changeWord(room);
+                room.skipVoteActive = false;
+                room.skipVotes = {};
+
+                for (const player of activePlayers) {
+                    const assignment = result.assignments[player.id];
+                    if (player.socketId) {
+                        io.to(player.socketId).emit('word-changed', {
+                            word: assignment.word,
+                            isBluff: assignment.isBluff
+                        });
+                    }
+                }
+            }
+
+            callback({ success: true });
+        } catch (err) {
+            console.error('Kelime değiştirme hatası:', err);
+            callback({ success: false, error: 'İşlem başarısız.' });
+        }
+    });
+
+    // ---- Kelime Değiştirme Oyu ----
+    socket.on('skip-word-vote', ({ roomCode, vote }, callback) => {
+        try {
+            const room = roomManager.getRoom(roomCode);
+            if (!room || !room.skipVoteActive) {
+                callback({ success: false, error: 'Aktif oylama bulunamadı.' });
+                return;
+            }
+
+            const playerInfo = roomManager.getPlayerInfo(socket.id);
+            if (!playerInfo) {
+                callback({ success: false, error: 'Geçersiz oyuncu.' });
+                return;
+            }
+
+            room.skipVotes[playerInfo.playerId] = vote;
+
+            const activePlayers = room.players.filter(p => p.connected);
+            const votedCount = Object.keys(room.skipVotes).length;
+            const yesCount = Object.values(room.skipVotes).filter(v => v === true).length;
+
+            // Oy durumunu bildir
+            io.to(roomCode).emit('skip-word-vote-update', {
+                votedCount,
+                totalPlayers: activePlayers.length
+            });
+
+            // Herkes oy verdi mi?
+            if (votedCount >= activePlayers.length) {
+                const majority = yesCount > activePlayers.length / 2;
+
+                if (majority) {
+                    // Kelimeyi değiştir
+                    const result = GameEngine.changeWord(room);
+                    room.skipVoteActive = false;
+                    room.skipVotes = {};
+
+                    // Yeni assignments'ı kaydet
+                    room.assignments = { ...room.assignments, ...result.assignments };
+
+                    console.log(`Kelime değiştirildi: ${roomCode} → ${result.word}`);
+
+                    for (const player of activePlayers) {
+                        const assignment = result.assignments[player.id];
+                        if (player.socketId) {
+                            io.to(player.socketId).emit('word-changed', {
+                                word: assignment.word,
+                                isBluff: assignment.isBluff,
+                                approved: true
+                            });
+                        }
+                    }
+                } else {
+                    // Reddedildi
+                    room.skipVoteActive = false;
+                    room.skipVotes = {};
+
+                    io.to(roomCode).emit('skip-word-rejected', {
+                        yesCount,
+                        noCount: votedCount - yesCount
+                    });
+                }
+            }
+
+            callback({ success: true });
+        } catch (err) {
+            console.error('Skip vote hatası:', err);
+            callback({ success: false, error: 'Oy verilemedi.' });
+        }
+    });
+
     // ---- Oy Ver ----
     socket.on('submit-vote', ({ roomCode, targetId }, callback) => {
         try {
@@ -374,14 +576,24 @@ io.on('connection', (socket) => {
                         reason: gameResult.reason
                     });
                 } else {
-                    // Sonuç
+                    // Sonuç - kelime dağılımını da gönder
                     const playerNames = {};
                     room.players.forEach(p => { playerNames[p.id] = p.name; });
+
+                    // Her oyuncunun kelimesini hazırla
+                    const wordAssignments = {};
+                    if (room.assignments) {
+                        for (const [id, assignment] of Object.entries(room.assignments)) {
+                            wordAssignments[id] = assignment.word;
+                        }
+                    }
 
                     io.to(roomCode).emit('game-result', {
                         ...gameResult,
                         playerNames,
-                        word: room.word
+                        word: room.word,
+                        bluffWord: room.bluffWord,
+                        wordAssignments
                     });
                 }
             }
@@ -447,6 +659,7 @@ function sanitizeRoom(room) {
         timerDuration: room.timerDuration,
         silentRound: room.silentRound,
         revoteEligible: room.revoteEligible,
+        skipVoteActive: room.skipVoteActive || false,
         players: room.players
             .filter(p => p.connected)
             .map(p => ({

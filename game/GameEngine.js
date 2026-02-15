@@ -1,4 +1,4 @@
-const { getRandomWord, getRandomSimilarPair } = require('./wordList');
+const { getRandomWord, getRandomSimilarGroup } = require('./wordList');
 const { shuffleArray, pickRandom } = require('../utils/helpers');
 
 // Eğlence modu twist'leri
@@ -44,13 +44,42 @@ class GameEngine {
     // Kelime seç (wordType'a göre: 'similar' veya 'random')
     static pickWord(wordType = 'similar', usedWords = []) {
         if (wordType === 'similar') {
-            const pair = getRandomSimilarPair(usedWords);
-            return { word: pair[0], bluffWord: pair[1], usedPair: pair };
+            const result = getRandomSimilarGroup(usedWords);
+            return { word: result.word, bluffWord: result.bluffWord, usedPair: result.group };
         } else {
             // Klasik BLÖF modu - random kelime
             const word = getRandomWord(usedWords.flat ? usedWords.flat() : usedWords);
             return { word, bluffWord: null, usedPair: [word] };
         }
+    }
+
+    // Kelime değiştir (skip word sistemi)
+    static changeWord(room) {
+        const wordType = room.wordType || 'similar';
+        const pick = GameEngine.pickWord(wordType, room.usedWords);
+
+        room.word = pick.word;
+        room.bluffWord = pick.bluffWord;
+        room.usedWords.push(pick.usedPair);
+
+        // Yeni kelimeleri ata
+        const activePlayers = room.players.filter(p => p.connected);
+        const assignments = {};
+        for (const player of activePlayers) {
+            if (room.bluffPlayerIds.includes(player.id)) {
+                assignments[player.id] = {
+                    word: pick.bluffWord || 'BLÖF',
+                    isBluff: true
+                };
+            } else {
+                assignments[player.id] = {
+                    word: pick.word,
+                    isBluff: false
+                };
+            }
+        }
+
+        return { success: true, assignments, word: pick.word, bluffWord: pick.bluffWord };
     }
 
     // Oyunu başlat
@@ -63,6 +92,8 @@ class GameEngine {
         room.revoteEligible = [];
         room.revoteVotes = {};
         room.twist = null;
+        room.skipVotes = {};
+        room.skipVoteActive = false;
 
         // usedWords array'i yoksa oluştur
         if (!room.usedWords) {
@@ -125,10 +156,10 @@ class GameEngine {
                 case 'similar_word': {
                     bluffCount = GameEngine.getStandardBluffCount(playerCount);
                     // Bu twist'te her zaman benzer kelime kullan
-                    const pair = getRandomSimilarPair(room.usedWords);
-                    word = pair[0];
-                    bluffWord = pair[1];
-                    room.usedWords.push(pair);
+                    const result = getRandomSimilarGroup(room.usedWords);
+                    word = result.word;
+                    bluffWord = result.bluffWord;
+                    room.usedWords.push(result.group);
                     break;
                 }
 
@@ -190,6 +221,9 @@ class GameEngine {
                 };
             }
         }
+
+        // Assignments'ı room'a kaydet (sonuç ekranı için)
+        room.assignments = assignments;
 
         return {
             success: true,
